@@ -1,13 +1,13 @@
 """Main window for difflex application."""
 
-import sys
-from PySide6.QtWidgets import QMainWindow, QTabWidget, QMenuBar, QMenu, QMessageBox
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QMainWindow, QTabWidget, QMessageBox
 from PySide6.QtGui import QAction
 
 from ..utils.settings import Settings
+from ..utils.i18n import tr
 from .home_widget import HomeWidget
-from .comparison_widget import ComparisonWidget
+from .file_comparison_widget import FileComparisonWidget
+from .parallel_comparison_widget import ParallelComparisonWidget
 from .settings_dialog import SettingsDialog
 from .history_dialog import HistoryDialog
 
@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         """Initialize main window."""
         super().__init__()
-        self.setWindowTitle("Difflex - ファイル/ディレクトリ比較")
+        self.setWindowTitle(tr("app_title"))
         self.setMinimumSize(1000, 600)
 
         self.settings = Settings()
@@ -31,33 +31,33 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
 
         # File menu
-        file_menu = menubar.addMenu("ファイル(&F)")
+        file_menu = menubar.addMenu(tr("menu_file"))
 
-        new_tab_action = QAction("新しい比較(&N)", self)
+        new_tab_action = QAction(tr("menu_new_comparison"), self)
         new_tab_action.triggered.connect(self._new_comparison)
         file_menu.addAction(new_tab_action)
 
-        history_action = QAction("履歴(&H)", self)
+        history_action = QAction(tr("menu_history"), self)
         history_action.triggered.connect(self._show_history)
         file_menu.addAction(history_action)
 
         file_menu.addSeparator()
 
-        exit_action = QAction("終了(&X)", self)
+        exit_action = QAction(tr("menu_exit"), self)
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
 
         # Settings menu
-        settings_menu = menubar.addMenu("設定(&S)")
+        settings_menu = menubar.addMenu(tr("menu_settings"))
 
-        settings_action = QAction("設定(&S)", self)
+        settings_action = QAction(tr("menu_settings"), self)
         settings_action.triggered.connect(self._show_settings)
         settings_menu.addAction(settings_action)
 
         # Help menu
-        help_menu = menubar.addMenu("ヘルプ(&H)")
+        help_menu = menubar.addMenu(tr("menu_help"))
 
-        about_action = QAction("Difflexについて(&A)", self)
+        about_action = QAction(tr("menu_about"), self)
         about_action.triggered.connect(self._show_about)
         help_menu.addAction(about_action)
 
@@ -76,13 +76,13 @@ class MainWindow(QMainWindow):
         home_widget.compare_requested.connect(self._start_comparison)
         home_widget.history_requested.connect(self._show_history)
 
-        self.tabs.addTab(home_widget, "ホーム")
+        self.tabs.addTab(home_widget, tr("tab_home"))
 
     def _new_comparison(self):
         """Create new comparison (go to home tab)."""
         # Check if home tab exists
         for i in range(self.tabs.count()):
-            if self.tabs.tabText(i) == "ホーム":
+            if self.tabs.tabText(i) == tr("tab_home"):
                 self.tabs.setCurrentIndex(i)
                 return
 
@@ -105,8 +105,11 @@ class MainWindow(QMainWindow):
         }
         self.settings.add_to_history(history_item)
 
-        # Create comparison widget
-        comparison_widget = ComparisonWidget(paths, is_directory, self.settings)
+        # Create comparison widget based on type
+        if is_directory:
+            comparison_widget = ParallelComparisonWidget(paths, self.settings)
+        else:
+            comparison_widget = FileComparisonWidget(paths, self.settings)
 
         # Create tab title
         from pathlib import Path
@@ -126,9 +129,9 @@ class MainWindow(QMainWindow):
             return
 
         # Don't close home tab if there are other tabs
-        if self.tabs.tabText(index) == "ホーム" and self.tabs.count() > 1:
+        if self.tabs.tabText(index) == tr("tab_home") and self.tabs.count() > 1:
             # Check if there are other home tabs
-            home_count = sum(1 for i in range(self.tabs.count()) if self.tabs.tabText(i) == "ホーム")
+            home_count = sum(1 for i in range(self.tabs.count()) if self.tabs.tabText(i) == tr("tab_home"))
             if home_count <= 1:
                 return
 
@@ -140,8 +143,17 @@ class MainWindow(QMainWindow):
     def _show_settings(self):
         """Show settings dialog."""
         dialog = SettingsDialog(self)
+        dialog.language_changed.connect(self._on_language_changed)
         if dialog.exec():
             self._apply_theme()
+
+    def _on_language_changed(self):
+        """Handle language change by showing restart message."""
+        QMessageBox.information(
+            self,
+            tr("language_changed_title"),
+            tr("language_changed_message")
+        )
 
     def _show_history(self):
         """Show history dialog."""
@@ -153,12 +165,8 @@ class MainWindow(QMainWindow):
         """Show about dialog."""
         QMessageBox.about(
             self,
-            "Difflexについて",
-            "<h2>Difflex</h2>"
-            "<p>バージョン: 0.0.1</p>"
-            "<p>スマートファイル/ディレクトリ比較ツール</p>"
-            "<p>3-way比較、類似度検出、外部ツール連携機能を搭載</p>"
-            "<p>© 2025 kakehashi</p>"
+            tr("about_title"),
+            tr("about_text")
         )
 
     def _apply_theme(self):
@@ -263,7 +271,7 @@ class MainWindow(QMainWindow):
         # Stop all comparison workers
         for i in range(self.tabs.count()):
             widget = self.tabs.widget(i)
-            if isinstance(widget, ComparisonWidget) and widget.worker:
+            if isinstance(widget, ParallelComparisonWidget) and hasattr(widget, 'worker') and widget.worker:
                 widget.worker.stop()
                 widget.worker.wait()
 

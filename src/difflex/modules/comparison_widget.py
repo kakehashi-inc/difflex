@@ -14,6 +14,7 @@ from PySide6.QtGui import QColor
 from ..utils.file_types import FileTypeDetector, FileType
 from ..utils.comparator import ComparisonResult
 from ..utils.settings import Settings
+from ..utils.i18n import tr
 from .comparison_worker import DirectoryComparisonWorker, FileComparisonItem
 
 
@@ -62,8 +63,9 @@ class ComparisonWidget(QWidget):
         layout = QVBoxLayout(self)
 
         # Header
+        comp_type = tr("directory_comparison") if self.is_directory else tr("file_comparison")
         header = QLabel(
-            f"{'ディレクトリ' if self.is_directory else 'ファイル'}比較: " +
+            comp_type + ": " +
             " vs ".join([p.name for p in self.paths])
         )
         header.setStyleSheet("font-weight: bold; font-size: 12px;")
@@ -71,7 +73,7 @@ class ComparisonWidget(QWidget):
 
         # Progress bar
         self.progress_bar = QProgressBar()
-        self.progress_label = QLabel("準備中...")
+        self.progress_label = QLabel(tr("preparing"))
         layout.addWidget(self.progress_label)
         layout.addWidget(self.progress_bar)
 
@@ -87,12 +89,12 @@ class ComparisonWidget(QWidget):
         total_cols = 1 + num_paths + num_result_cols  # name + paths + results
 
         self.table.setColumnCount(total_cols)
-        headers = ["ファイル名"]
+        headers = [tr("file_name")]
 
         for i, path in enumerate(self.paths):
-            headers.append(f"場所{i+1}")
+            headers.append(tr("comparison_location", i+1))
             if i < num_paths - 1:
-                headers.append(f"比較{i+1}-{i+2}")
+                headers.append(tr("comparison_result"))
 
         self.table.setHorizontalHeaderLabels(headers)
         self.table.horizontalHeader().setStretchLastSection(False)
@@ -103,14 +105,14 @@ class ComparisonWidget(QWidget):
         # Buttons
         button_layout = QHBoxLayout()
 
-        self.open_btn = QPushButton("外部ツールで開く")
+        self.open_btn = QPushButton(tr("open_external_tool"))
         self.open_btn.setEnabled(False)
         self.open_btn.clicked.connect(self._open_in_external_tool)
         button_layout.addWidget(self.open_btn)
 
         button_layout.addStretch()
 
-        self.stop_btn = QPushButton("停止")
+        self.stop_btn = QPushButton(tr("stop"))
         self.stop_btn.clicked.connect(self._stop_comparison)
         button_layout.addWidget(self.stop_btn)
 
@@ -120,14 +122,14 @@ class ComparisonWidget(QWidget):
         """Start file comparison."""
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(100)
-        self.progress_label.setText("ファイル比較完了")
+        self.progress_label.setText(tr("file_comparison_complete"))
         self.stop_btn.setEnabled(False)
 
         # Add single row
         self.table.setRowCount(1)
 
         # File name
-        self.table.setItem(0, 0, QTableWidgetItem("比較ファイル"))
+        self.table.setItem(0, 0, QTableWidgetItem(tr("file_comparison")))
 
         # Paths
         for i, path in enumerate(self.paths):

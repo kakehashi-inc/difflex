@@ -77,6 +77,14 @@ svg"""
         """Set dark mode."""
         self._settings.setValue("dark_mode", enabled)
 
+    def get_language(self) -> str:
+        """Get language setting."""
+        return self._settings.value("language", "", type=str)
+
+    def set_language(self, language: str) -> None:
+        """Set language."""
+        self._settings.setValue("language", language)
+
     def get_text_similarity_threshold(self) -> float:
         """Get text similarity threshold (0-100)."""
         return self._settings.value("text_similarity_threshold", 95.0, type=float)
@@ -133,6 +141,45 @@ svg"""
         """Set external tool configuration for a file type."""
         key = f"external_tool_{file_type}"
         self._settings.setValue(key, json.dumps(config))
+
+    def get_external_text_tool(self) -> str:
+        """Get external text tool command line."""
+        config = self.get_external_tool_config("text")
+        return self._build_tool_command(config)
+
+    def get_external_image_tool(self) -> str:
+        """Get external image tool command line."""
+        config = self.get_external_tool_config("image")
+        return self._build_tool_command(config)
+
+    def get_external_binary_tool(self) -> str:
+        """Get external binary tool command line."""
+        config = self.get_external_tool_config("binary")
+        return self._build_tool_command(config)
+
+    def _build_tool_command(self, config: dict[str, Any]) -> str:
+        """Build tool command from configuration."""
+        executable = config.get("executable", "")
+        if not executable:
+            return ""
+
+        parts = [executable]
+
+        arg_before = config.get("arg_before", "")
+        if arg_before:
+            parts.append(arg_before)
+
+        # Add placeholders for file paths
+        parts.append("$1")
+        parts.append("$2")
+        if config.get("arg3"):
+            parts.append("$3")
+
+        arg_after = config.get("arg_after", "")
+        if arg_after:
+            parts.append(arg_after)
+
+        return " ".join(parts)
 
     def get_comparison_history(self) -> list[dict[str, Any]]:
         """Get comparison history."""

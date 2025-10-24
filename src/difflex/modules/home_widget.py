@@ -7,6 +7,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, Qt
 
+from ..utils.i18n import tr
+
 
 class PathInputWidget(QWidget):
     """Widget for inputting a file or directory path."""
@@ -34,8 +36,8 @@ class PathInputWidget(QWidget):
         # Line edit
         self.line_edit = QLineEdit()
         self.line_edit.setPlaceholderText(
-            "ファイルをドラッグ&ドロップ または ボタンで選択" if is_file
-            else "ディレクトリをドラッグ&ドロップ または ボタンで選択"
+            tr("file_placeholder") if is_file
+            else tr("directory_placeholder")
         )
         self.line_edit.setAcceptDrops(True)
         self.line_edit.dragEnterEvent = self._drag_enter_event
@@ -43,7 +45,7 @@ class PathInputWidget(QWidget):
         layout.addWidget(self.line_edit, 1)
 
         # Browse button
-        browse_btn = QPushButton("参照...")
+        browse_btn = QPushButton(tr("browse"))
         browse_btn.clicked.connect(self._browse)
         layout.addWidget(browse_btn)
 
@@ -72,14 +74,14 @@ class PathInputWidget(QWidget):
         if self.is_file:
             path, _ = QFileDialog.getOpenFileName(
                 self,
-                "ファイルを選択",
+                tr("select_file"),
                 "",
-                "すべてのファイル (*.*)"
+                tr("all_files")
             )
         else:
             path = QFileDialog.getExistingDirectory(
                 self,
-                "ディレクトリを選択"
+                tr("select_directory")
             )
 
         if path:
@@ -114,53 +116,49 @@ class HomeWidget(QWidget):
         layout = QVBoxLayout(self)
 
         # Title
-        title = QLabel("Difflex - ファイル/ディレクトリ比較")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; margin: 10px;")
+        title = QLabel(tr("home_title"))
+        title.setStyleSheet("font-size: 18px; font-weight: bold; margin: 20px;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        # File comparison group
-        file_group = QGroupBox("ファイル比較")
+        # File comparison section
+        file_group = QGroupBox(tr("file_comparison"))
         file_layout = QVBoxLayout(file_group)
 
         self.file_inputs = []
         for i in range(3):
-            input_widget = PathInputWidget(f"ファイル {i+1}:", is_file=True)
-            input_widget.line_edit.textChanged.connect(self._update_buttons)
+            input_widget = PathInputWidget(tr("file_label", str(i+1)), is_file=True)
             self.file_inputs.append(input_widget)
             file_layout.addWidget(input_widget)
 
-        self.file_compare_btn = QPushButton("ファイル比較を開始")
-        self.file_compare_btn.setEnabled(False)
+        self.file_compare_btn = QPushButton(tr("start_file_comparison"))
         self.file_compare_btn.clicked.connect(self._start_file_comparison)
         file_layout.addWidget(self.file_compare_btn)
 
         layout.addWidget(file_group)
 
-        # Directory comparison group
-        dir_group = QGroupBox("ディレクトリ比較")
+        # Directory comparison section
+        dir_group = QGroupBox(tr("directory_comparison"))
         dir_layout = QVBoxLayout(dir_group)
 
         self.dir_inputs = []
         for i in range(3):
-            input_widget = PathInputWidget(f"ディレクトリ {i+1}:", is_file=False)
-            input_widget.line_edit.textChanged.connect(self._update_buttons)
+            input_widget = PathInputWidget(tr("directory_label", str(i+1)), is_file=False)
             self.dir_inputs.append(input_widget)
             dir_layout.addWidget(input_widget)
 
-        self.dir_compare_btn = QPushButton("ディレクトリ比較を開始")
-        self.dir_compare_btn.setEnabled(False)
+        self.dir_compare_btn = QPushButton(tr("start_directory_comparison"))
         self.dir_compare_btn.clicked.connect(self._start_dir_comparison)
         dir_layout.addWidget(self.dir_compare_btn)
 
         layout.addWidget(dir_group)
 
+        layout.addStretch()
+
         # History button
-        history_btn = QPushButton("比較履歴を表示")
+        history_btn = QPushButton(tr("show_history"))
         history_btn.clicked.connect(self.history_requested.emit)
         layout.addWidget(history_btn)
-
-        layout.addStretch()
 
     def _update_buttons(self):
         """Update button states based on inputs."""

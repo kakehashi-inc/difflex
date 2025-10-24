@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal
 
 from ..utils.settings import Settings
+from ..utils.i18n import tr
 
 
 class HistoryDialog(QDialog):
@@ -17,7 +18,7 @@ class HistoryDialog(QDialog):
     def __init__(self, parent=None):
         """Initialize history dialog."""
         super().__init__(parent)
-        self.setWindowTitle("比較履歴")
+        self.setWindowTitle(tr("history_title"))
         self.setMinimumSize(700, 400)
         self.settings = Settings()
         self._setup_ui()
@@ -30,7 +31,7 @@ class HistoryDialog(QDialog):
         # Table
         self.table = QTableWidget()
         self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["種類", "パス1", "パス2", "パス3"])
+        self.table.setHorizontalHeaderLabels([tr("type"), tr("path1"), tr("path2"), tr("path3")])
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -43,17 +44,17 @@ class HistoryDialog(QDialog):
         # Buttons
         button_layout = QHBoxLayout()
 
-        rerun_btn = QPushButton("再実行")
+        rerun_btn = QPushButton(tr("rerun"))
         rerun_btn.clicked.connect(self._rerun_comparison)
         button_layout.addWidget(rerun_btn)
 
-        clear_btn = QPushButton("履歴をクリア")
+        clear_btn = QPushButton(tr("clear_history"))
         clear_btn.clicked.connect(self._clear_history)
         button_layout.addWidget(clear_btn)
 
         button_layout.addStretch()
 
-        close_btn = QPushButton("閉じる")
+        close_btn = QPushButton(tr("close"))
         close_btn.clicked.connect(self.accept)
         button_layout.addWidget(close_btn)
 
@@ -70,7 +71,7 @@ class HistoryDialog(QDialog):
             paths = item.get("paths", [])
 
             # Type
-            type_item = QTableWidgetItem("ディレクトリ" if is_dir else "ファイル")
+            type_item = QTableWidgetItem(tr("type_directory") if is_dir else tr("type_file"))
             self.table.setItem(row, 0, type_item)
 
             # Paths
@@ -78,7 +79,7 @@ class HistoryDialog(QDialog):
                 path = paths[i] if i < len(paths) else ""
                 self.table.setItem(row, 1 + i, QTableWidgetItem(path))
 
-    def _on_row_double_clicked(self, index):
+    def _on_row_double_clicked(self, _index):
         """Handle row double click."""
         self._rerun_comparison()
 
